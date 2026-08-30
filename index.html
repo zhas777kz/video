@@ -115,11 +115,21 @@
     border:1px solid var(--green);
     color:var(--green);
   }
+  button:disabled{opacity:.5; cursor:not-allowed;}
   .hint{
     font-size:.78rem;
     color:#5a5346;
     margin-top:4px;
     line-height:1.4;
+  }
+  .warn{
+    background:#fff3cd;
+    border-left:4px solid #cc9a06;
+    padding:10px 12px;
+    font-size:.8rem;
+    border-radius:0 4px 4px 0;
+    margin-bottom:14px;
+    line-height:1.5;
   }
   video{
     width:100%;
@@ -207,6 +217,11 @@
     <div class="rule"></div>
   </header>
 
+  <div id="configWarning" class="warn" style="display:none;">
+    ⚠ Firebase не настроен. Откройте index.html, найдите объект <b>firebaseConfig</b> в начале файла
+    и вставьте туда данные из консоли Firebase (Project settings → General → Your apps).
+  </div>
+
   <div class="tabs">
     <div class="tab active" id="tabStudent" onclick="switchTab('student')">Ученик</div>
     <div class="tab" id="tabTeacher" onclick="switchTab('teacher')">Учитель</div>
@@ -248,7 +263,7 @@
       <input type="text" id="videoTitle" placeholder="Например: Тема урока 5">
     </div>
     <button onclick="saveVideo()">Сохранить видео</button>
-    <div class="hint">Нужна прямая ссылка на файл видео (не YouTube) — иначе отслеживание просмотра работать не будет. Подойдёт файл, загруженный на свой хостинг, облако с прямой ссылкой на скачивание и т.п.</div>
+    <div class="hint">Нужна прямая ссылка на файл видео (не YouTube) — иначе отслеживание просмотра работать не будет.</div>
 
     <div class="row-buttons">
       <button class="secondary" onclick="loadWatchers()">Обновить список</button>
@@ -266,12 +281,42 @@
   </div>
 </div>
 
-<script>
+<script type="module">
+// ====== ВСТАВЬТЕ СЮДА ВАШ КОНФИГ ИЗ КОНСОЛИ FIREBASE ======
+const firebaseConfig = {
+  apiKey: "ВАШ_apiKey",
+  authDomain: "ВАШ_authDomain",
+  projectId: "ВАШ_projectId",
+  storageBucket: "ВАШ_storageBucket",
+  messagingSenderId: "ВАШ_messagingSenderId",
+  appId: "ВАШ_appId"
+};
+// ============================================================
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
+import {
+  getFirestore, doc, setDoc, getDoc, getDocs, collection, deleteDoc
+} from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+
+let db = null;
+let firebaseReady = false;
+try {
+  if (firebaseConfig.apiKey && !firebaseConfig.apiKey.startsWith("ВАШ")) {
+    const app = initializeApp(firebaseConfig);
+    db = getFirestore(app);
+    firebaseReady = true;
+  } else {
+    document.getElementById('configWarning').style.display = 'block';
+  }
+} catch (e) {
+  document.getElementById('configWarning').style.display = 'block';
+}
+
 let sessionId = null;
 let saveTimer = null;
-let maxTime = 0, watchedSeconds = 0, lastTime = 0, duration = 0, finished = false;
+let maxTime = 0, watchedSeconds = 0, lastTime = 0, duration = 0;
 
-function switchTab(tab){
+window.switchTab = function(tab){
   document.getElementById('tabStudent').classList.toggle('active', tab==='student');
   document.getElementById('tabTeacher').classList.toggle('active', tab==='teacher');
   document.getElementById('studentCard').style.display = tab==='student' ? 'block':'none';
@@ -280,22 +325,24 @@ function switchTab(tab){
 }
 
 async function loadTeacherFields(){
+  if(!firebaseReady) return;
   try{
-    const res = await window.storage.get('video-config', true);
-    if(res && res.value){
-      const cfg = JSON.parse(res.value);
+    const snap = await getDoc(doc(db, 'app_config', 'video'));
+    if(snap.exists()){
+      const cfg = snap.data();
       document.getElementById('videoUrl').value = cfg.url || '';
       document.getElementById('videoTitle').value = cfg.title || '';
     }
-  }catch(e){}
+  }catch(e){ console.error(e); }
 }
 
-async function saveVideo(){
+window.saveVideo = async function(){
+  if(!firebaseReady){ alert('Firebase не настроен — см. предупреждение вверху страницы.'); return; }
   const url = document.getElementById('videoUrl').value.trim();
   const title = document.getElementById('videoTitle').value.trim();
   if(!url){ alert('Вставьте ссылку на видео'); return; }
   try{
-    await window.storage.set('video-config', JSON.stringify({url, title}), true);
+    await setDoc(doc(db, 'app_config', 'video'), {url, title});
     alert('Видео сохранено');
   }catch(e){
     alert('Ошибка сохранения: ' + e.message);
@@ -303,20 +350,24 @@ async function saveVideo(){
 }
 
 async function checkVideoAvailable(){
+  if(!firebaseReady){
+    document.getElementById('noVideoHint').textContent = 'Firebase не настроен — см. предупреждение вверху страницы.';
+    return null;
+  }
   try{
-    const res = await window.storage.get('video-config', true);
-    if(!res || !res.value){
+    const snap = await getDoc(doc(db, 'app_config', 'video'));
+    if(!snap.exists()){
       document.getElementById('noVideoHint').textContent = 'Учитель ещё не добавил видео.';
       return null;
     }
-    return JSON.parse(res.value);
+    return snap.data();
   }catch(e){
-    document.getElementById('noVideoHint').textContent = 'Учитель ещё не добавил видео.';
+    document.getElementById('noVideoHint').textContent = 'Ошибка подключения к базе данных.';
     return null;
   }
 }
 
-async function startWatching(){
+window.startWatching = async function(){
   const name = document.getElementById('stName').value.trim();
   const className = document.getElementById('stClass').value.trim();
   if(!name || !className){ alert('Укажите фамилию и класс'); return; }
@@ -340,13 +391,12 @@ async function startWatching(){
     if(delta > 0 && delta < 1.5) watchedSeconds += delta;
     if(t > maxTime) maxTime = t;
     lastTime = t;
-    updateLiveStatus(name, className);
+    updateLiveStatus();
   });
 
   video.addEventListener('seeked', () => { lastTime = video.currentTime; });
 
   video.addEventListener('ended', async () => {
-    finished = true;
     await saveRecord(name, className);
     showThanks();
   });
@@ -379,7 +429,7 @@ function computeStatus(){
   return {percent, watchRatio, label};
 }
 
-function updateLiveStatus(name, className){
+function updateLiveStatus(){
   const {percent, label} = computeStatus();
   document.getElementById('progInner').style.width = percent + '%';
   document.getElementById('liveStatus').innerHTML =
@@ -387,7 +437,7 @@ function updateLiveStatus(name, className){
 }
 
 async function saveRecord(name, className){
-  if(!sessionId) return;
+  if(!sessionId || !firebaseReady) return;
   const {percent, label} = computeStatus();
   const record = {
     name, className,
@@ -398,8 +448,8 @@ async function saveRecord(name, className){
     timestamp: new Date().toISOString()
   };
   try{
-    await window.storage.set('watch:' + sessionId, JSON.stringify(record), true);
-  }catch(e){}
+    await setDoc(doc(db, 'watchers', sessionId), record);
+  }catch(e){ console.error(e); }
 }
 
 function showThanks(){
@@ -408,21 +458,20 @@ function showThanks(){
   document.getElementById('studentThanks').style.display = 'block';
 }
 
-async function loadWatchers(){
+window.loadWatchers = async function(){
   const body = document.getElementById('watchersBody');
+  if(!firebaseReady){
+    body.innerHTML = '<tr class="empty-row"><td colspan="5">Firebase не настроен</td></tr>';
+    return;
+  }
   body.innerHTML = '<tr class="empty-row"><td colspan="5">Загрузка…</td></tr>';
   try{
-    const list = await window.storage.list('watch:', true);
-    if(!list || !list.keys || list.keys.length === 0){
+    const snap = await getDocs(collection(db, 'watchers'));
+    const records = [];
+    snap.forEach(d => records.push(d.data()));
+    if(records.length === 0){
       body.innerHTML = '<tr class="empty-row"><td colspan="5">Пока никто не смотрел видео</td></tr>';
       return;
-    }
-    const records = [];
-    for(const key of list.keys){
-      try{
-        const res = await window.storage.get(key, true);
-        if(res && res.value) records.push(JSON.parse(res.value));
-      }catch(e){}
     }
     records.sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
     body.innerHTML = records.map(r => `
@@ -435,22 +484,21 @@ async function loadWatchers(){
       </tr>
     `).join('');
   }catch(e){
-    body.innerHTML = '<tr class="empty-row"><td colspan="5">Ошибка загрузки</td></tr>';
+    body.innerHTML = '<tr class="empty-row"><td colspan="5">Ошибка загрузки: ' + escapeHtml(e.message) + '</td></tr>';
   }
 }
 
-async function clearWatchers(){
+window.clearWatchers = async function(){
+  if(!firebaseReady) return;
   if(!confirm('Удалить весь журнал просмотров? Это необратимо.')) return;
   try{
-    const list = await window.storage.list('watch:', true);
-    if(list && list.keys){
-      for(const key of list.keys){
-        await window.storage.delete(key, true);
-      }
+    const snap = await getDocs(collection(db, 'watchers'));
+    for(const d of snap.docs){
+      await deleteDoc(doc(db, 'watchers', d.id));
     }
     loadWatchers();
   }catch(e){
-    alert('Ошибка удаления');
+    alert('Ошибка удаления: ' + e.message);
   }
 }
 
