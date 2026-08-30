@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Конфиденциальность — ВидеоКласс</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="./"><span class="brand-mark" aria-hidden="true">▶</span><span data-site-name>ВидеоКласс</span></a>
+  </header>
+  <main class="page-shell legal-page">
+    <a class="back-button" href="./">← Вернуться на сайт</a>
+    <p class="eyebrow">Информация для учеников и родителей</p>
+    <h1>Какие данные сохраняются</h1>
+    <p>Сайт сохраняет фамилию и имя ученика, класс, выбранное видео и технические сведения о просмотре: время начала и последней активности, просмотренную долю видео, фактическое время воспроизведения, число перемоток и максимальную выбранную скорость.</p>
+    <h2>Для чего нужны данные</h2>
+    <p>Данные используются только учителем для проверки ознакомления с учебным материалом. Они не предназначены для рекламы или открытой публикации.</p>
+    <h2>Кто видит результаты</h2>
+    <p>Таблица результатов доступна только в закрытом кабинете учителя. Ученики не могут просматривать данные других учеников.</p>
+    <h2>Важно</h2>
+    <p>Система фиксирует воспроизведение видео в браузере, но не может достоверно определить, смотрел ли человек на экран и насколько внимательно он воспринимал материал.</p>
+    <h2>Удаление данных</h2>
+    <p>Чтобы исправить или удалить запись, обратитесь к учителю, который предоставил ссылку на видео.</p>
+  </main>
+  <footer><span>© <span id="current-year"></span> <span data-site-name>ВидеоКласс</span></span></footer>
+  <script src="config.js"></script>
+  <script>
+    document.querySelectorAll('[data-site-name]').forEach((el) => { el.textContent = window.APP_CONFIG?.siteName || 'ВидеоКласс'; });
+    document.getElementById('current-year').textContent = new Date().getFullYear();
+  </script>
+</body>
+</html>

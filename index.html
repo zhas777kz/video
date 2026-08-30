@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#4f46e5">
+  <meta name="description" content="Просмотр учебных видео с фиксацией прогресса">
+  <title>ВидеоКласс — учебные видео</title>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="./" aria-label="На главную">
+      <span class="brand-mark" aria-hidden="true">▶</span>
+      <span data-site-name>ВидеоКласс</span>
+    </a>
+    <a class="teacher-link" href="admin.html">Вход для учителя</a>
+  </header>
+
+  <main class="page-shell">
+    <section id="setup-warning" class="notice notice-warning hidden" role="alert">
+      <strong>Сайт ещё не подключён к базе данных.</strong>
+      <span>Откройте файл README.md и выполните короткую настройку.</span>
+    </section>
+
+    <section id="catalog-view">
+      <div class="hero">
+        <div>
+          <p class="eyebrow">Учебная видеотека</p>
+          <h1>Выберите видео для просмотра</h1>
+          <p class="hero-copy">Откройте материал, укажите имя и класс — ваш прогресс сохранится автоматически.</p>
+        </div>
+        <div class="hero-illustration" aria-hidden="true">
+          <span class="play-disc">▶</span>
+        </div>
+      </div>
+
+      <div id="catalog-loading" class="loading-card">
+        <span class="spinner" aria-hidden="true"></span> Загружаем видео…
+      </div>
+      <div id="empty-state" class="empty-state hidden">
+        <span class="empty-icon" aria-hidden="true">🎬</span>
+        <h2>Видео пока не добавлены</h2>
+        <p>Когда учитель опубликует материал, он появится здесь.</p>
+      </div>
+      <div id="video-grid" class="video-grid" aria-live="polite"></div>
+    </section>
+
+    <section id="identity-view" class="center-card hidden">
+      <button class="back-button" type="button" data-back>← Назад к видео</button>
+      <div class="selected-video-summary">
+        <div class="summary-icon" aria-hidden="true">▶</div>
+        <div>
+          <p class="eyebrow">Вы выбрали</p>
+          <h1 id="identity-video-title">Учебное видео</h1>
+          <p id="identity-video-description" class="muted"></p>
+        </div>
+      </div>
+
+      <form id="identity-form" class="identity-form">
+        <div class="field">
+          <label for="student-name">Фамилия и имя</label>
+          <input id="student-name" name="studentName" autocomplete="name" maxlength="100" required placeholder="Например: Иванова Алина">
+        </div>
+        <div class="field">
+          <label for="student-class">Класс</label>
+          <input id="student-class" name="studentClass" autocomplete="off" maxlength="20" required placeholder="Например: 7 Б">
+        </div>
+        <label class="consent-row">
+          <input id="consent" type="checkbox" required>
+          <span>Я указал(а) свои данные верно и согласен(на) на сохранение результата просмотра.</span>
+        </label>
+        <button class="button button-primary button-large" type="submit">Перейти к просмотру</button>
+        <p class="form-note">Сохраняются имя, класс и техническая статистика просмотра. <a href="privacy.html" target="_blank">Подробнее</a></p>
+      </form>
+    </section>
+
+    <section id="player-view" class="player-layout hidden">
+      <div class="player-heading">
+        <div>
+          <p class="eyebrow">Сейчас смотрит: <span id="viewer-name"></span></p>
+          <h1 id="player-title">Учебное видео</h1>
+        </div>
+        <span id="save-state" class="save-state">Прогресс сохраняется</span>
+      </div>
+
+      <div class="video-frame">
+        <video id="lesson-player" controls controlsList="nodownload" playsinline preload="metadata"></video>
+      </div>
+
+      <div class="progress-panel">
+        <div class="progress-label-row">
+          <strong>Ваш прогресс</strong>
+          <span id="progress-text">0%</span>
+        </div>
+        <div class="progress-track" aria-hidden="true"><span id="progress-bar"></span></div>
+        <div class="progress-details">
+          <span>Просмотрено: <strong id="watched-time">0 мин</strong></span>
+          <span id="completion-hint">Для завершения посмотрите не менее 90% видео</span>
+        </div>
+      </div>
+
+      <div id="completed-card" class="completed-card hidden">
+        <span class="completed-check" aria-hidden="true">✓</span>
+        <div>
+          <h2>Видео просмотрено</h2>
+          <p>Ваш результат сохранён. Можно закрыть страницу.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <span>© <span id="current-year"></span> <span data-site-name>ВидеоКласс</span></span>
+    <a href="privacy.html">Конфиденциальность</a>
+  </footer>
+
+  <div id="toast" class="toast hidden" role="status"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

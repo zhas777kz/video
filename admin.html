@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#4f46e5">
+  <meta name="description" content="Кабинет учителя — управление учебными видео">
+  <title>Кабинет учителя — ВидеоКласс</title>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="admin-body">
+  <header class="topbar">
+    <a class="brand" href="./">
+      <span class="brand-mark" aria-hidden="true">▶</span>
+      <span data-site-name>ВидеоКласс</span>
+    </a>
+    <div id="admin-header-actions" class="header-actions hidden">
+      <span id="teacher-email" class="teacher-email"></span>
+      <button id="sign-out" class="button button-ghost button-small" type="button">Выйти</button>
+    </div>
+  </header>
+
+  <main class="page-shell admin-shell">
+    <section id="setup-warning" class="notice notice-warning hidden" role="alert">
+      <strong>Сайт ещё не подключён к базе данных.</strong>
+      <span>Откройте файл README.md и выполните короткую настройку.</span>
+    </section>
+
+    <section id="login-view" class="login-card">
+      <div class="login-icon" aria-hidden="true">🔐</div>
+      <p class="eyebrow">Закрытый раздел</p>
+      <h1>Вход для учителя</h1>
+      <p class="muted">Здесь можно загружать видео и смотреть результаты учеников.</p>
+      <form id="login-form">
+        <div class="field">
+          <label for="email">Электронная почта</label>
+          <input id="email" type="email" autocomplete="username" required placeholder="teacher@school.kz">
+        </div>
+        <div class="field">
+          <label for="password">Пароль</label>
+          <input id="password" type="password" autocomplete="current-password" minlength="8" required placeholder="Не менее 8 символов">
+        </div>
+        <button class="button button-primary button-large" type="submit">Войти</button>
+        <p id="login-error" class="form-error hidden"></p>
+      </form>
+    </section>
+
+    <section id="dashboard-view" class="hidden">
+      <div class="dashboard-heading">
+        <div>
+          <p class="eyebrow">Кабинет учителя</p>
+          <h1>Видео и результаты</h1>
+        </div>
+        <button id="open-upload" class="button button-primary" type="button">＋ Добавить видео</button>
+      </div>
+
+      <div class="stats-grid">
+        <article class="stat-card">
+          <span class="stat-icon stat-icon-purple" aria-hidden="true">▶</span>
+          <div><strong id="stat-videos">0</strong><span>Видео</span></div>
+        </article>
+        <article class="stat-card">
+          <span class="stat-icon stat-icon-blue" aria-hidden="true">👥</span>
+          <div><strong id="stat-students">0</strong><span>Учеников</span></div>
+        </article>
+        <article class="stat-card">
+          <span class="stat-icon stat-icon-green" aria-hidden="true">✓</span>
+          <div><strong id="stat-completed">0</strong><span>Досмотрели</span></div>
+        </article>
+        <article class="stat-card">
+          <span class="stat-icon stat-icon-orange" aria-hidden="true">%</span>
+          <div><strong id="stat-average">0%</strong><span>Средний просмотр</span></div>
+        </article>
+      </div>
+
+      <section class="panel">
+        <div class="panel-heading">
+          <div>
+            <h2>Ваши видео</h2>
+            <p class="muted">Нажмите на видео, чтобы увидеть его статистику.</p>
+          </div>
+        </div>
+        <div id="admin-video-list" class="admin-video-list"></div>
+        <div id="admin-video-empty" class="empty-state compact hidden">
+          <span class="empty-icon" aria-hidden="true">🎬</span>
+          <h3>Добавьте первое видео</h3>
+          <p>После публикации вы сможете отправить ученикам готовую ссылку.</p>
+        </div>
+      </section>
+
+      <section id="results-panel" class="panel hidden">
+        <div class="panel-heading results-heading">
+          <div>
+            <p class="eyebrow">Статистика видео</p>
+            <h2 id="results-title">Результаты</h2>
+          </div>
+          <div class="panel-actions">
+            <button id="copy-link" class="button button-secondary" type="button">Скопировать ссылку</button>
+            <button id="export-csv" class="button button-secondary" type="button">Скачать Excel/CSV</button>
+          </div>
+        </div>
+        <div class="filters-row">
+          <div class="search-field">
+            <span aria-hidden="true">⌕</span>
+            <input id="result-search" type="search" placeholder="Поиск по фамилии или классу">
+          </div>
+          <select id="status-filter" aria-label="Фильтр по результату">
+            <option value="all">Все результаты</option>
+            <option value="completed">Досмотрели</option>
+            <option value="partial">Посмотрели частично</option>
+            <option value="fast">Смотрели быстро</option>
+            <option value="started">Только начали</option>
+          </select>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Ученик</th>
+                <th>Класс</th>
+                <th>Результат</th>
+                <th>Просмотрено</th>
+                <th>Время</th>
+                <th>Скорость</th>
+                <th>Перемотки</th>
+                <th>Последняя активность</th>
+              </tr>
+            </thead>
+            <tbody id="results-body"></tbody>
+          </table>
+          <div id="results-empty" class="empty-table hidden">Подходящих результатов пока нет.</div>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <dialog id="upload-dialog" class="modal">
+    <form id="upload-form" method="dialog">
+      <div class="modal-heading">
+        <div><p class="eyebrow">Новый материал</p><h2>Добавить видео</h2></div>
+        <button id="close-upload" class="icon-button" type="button" aria-label="Закрыть">×</button>
+      </div>
+      <div class="field">
+        <label for="video-title">Название</label>
+        <input id="video-title" maxlength="150" required placeholder="Например: Техника безопасности">
+      </div>
+      <div class="field">
+        <label for="video-description">Описание <span class="optional">необязательно</span></label>
+        <textarea id="video-description" maxlength="500" rows="3" placeholder="Коротко расскажите, о чём видео"></textarea>
+      </div>
+      <div class="field">
+        <label for="video-file">Видеофайл</label>
+        <label class="file-drop" for="video-file">
+          <span class="file-icon" aria-hidden="true">↑</span>
+          <strong id="file-label">Выберите MP4, WebM или MOV</strong>
+          <span>Максимальный размер зависит от настроек хранилища</span>
+        </label>
+        <input id="video-file" class="visually-hidden" type="file" accept="video/mp4,video/webm,video/quicktime" required>
+      </div>
+      <label class="switch-row">
+        <input id="video-published" type="checkbox" checked>
+        <span><strong>Опубликовать сразу</strong><small>Видео появится на странице учеников</small></span>
+      </label>
+      <div id="upload-progress-wrap" class="upload-progress-wrap hidden">
+        <div class="progress-label-row"><span id="upload-status">Загрузка…</span><span id="upload-percent">0%</span></div>
+        <div class="progress-track"><span id="upload-progress"></span></div>
+      </div>
+      <p id="upload-error" class="form-error hidden"></p>
+      <div class="modal-actions">
+        <button id="cancel-upload" class="button button-ghost" type="button">Отмена</button>
+        <button id="submit-upload" class="button button-primary" type="submit">Загрузить видео</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div id="toast" class="toast hidden" role="status"></div>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/tus-js-client@4/dist/tus.min.js"></script>
+  <script src="config.js"></script>
+  <script src="admin.js"></script>
+</body>
+</html>
